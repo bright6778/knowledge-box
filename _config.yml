@@ -1,0 +1,6 @@
+title: 知识卡片盒
+description: 个人技术小知识速查库
+collections:
+  cards:
+    output: false
+markdown: kramdown

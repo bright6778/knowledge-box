@@ -1,0 +1,147 @@
+---
+layout: null
+---
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识卡片盒</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F1F5F3; --surface:#FFFFFF; --surface-2:#E5ECE9;
+  --ink:#152420; --ink-dim:#51625B; --border:#D4DEDA;
+  --accent:#0E7C74; --accent-ink:#FFFFFF; --accent-soft:#DCEFEC;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1210; --surface:#141C1A; --surface-2:#1A2422;
+    --ink:#E7EFEC; --ink-dim:#9BAEA7; --border:#243330;
+    --accent:#49D0C4; --accent-ink:#05211D; --accent-soft:#16302C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1210; --surface:#141C1A; --surface-2:#1A2422;
+  --ink:#E7EFEC; --ink-dim:#9BAEA7; --border:#243330;
+  --accent:#49D0C4; --accent-ink:#05211D; --accent-soft:#16302C;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px;line-height:1.55;}
+.shell{max-width:980px;margin:0 auto;padding:44px 22px 80px;}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+h1{font-size:clamp(24px,4.2vw,32px);margin:8px 0 6px;font-weight:700;letter-spacing:-.01em;text-wrap:balance;}
+.dek{color:var(--ink-dim);font-size:14.5px;max-width:60ch;margin:0 0 22px;}
+.toolbar{margin-bottom:14px;}
+.search{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--ink);font-family:inherit;}
+.search:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--ink-dim);cursor:pointer;}
+.chip.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px 14px;display:flex;flex-direction:column;gap:8px;}
+.card.hidden-card{display:none;}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--ink-dim);white-space:nowrap;}
+.card-date{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-dim);}
+.card-title{font-size:15.5px;font-weight:600;margin:0;cursor:pointer;line-height:1.35;}
+.card-title:hover{color:var(--accent);}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:5px;}
+.summary{font-size:13.5px;color:var(--ink-dim);margin:0;}
+.content-wrap{display:none;}
+.content-wrap.open{display:block;}
+.content{background:var(--surface-2);font-size:13px;padding:10px 13px;border-radius:8px;overflow-x:auto;margin:4px 0 0;}
+.content pre{background:#101715;color:#CFE8E2;font-family:"IBM Plex Mono",monospace;font-size:12px;padding:10px;border-radius:6px;overflow-x:auto;}
+.content code{font-family:"IBM Plex Mono",monospace;}
+.card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.expand-btn{background:none;border:none;color:var(--ink-dim);font-family:"IBM Plex Mono",monospace;font-size:12px;cursor:pointer;padding:2px 0;}
+.expand-btn:hover{color:var(--accent);}
+.card-link{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600;}
+.card-link:hover{text-decoration:underline;}
+.empty{color:var(--ink-dim);font-size:13.5px;padding:30px 0;text-align:center;}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--border);font-size:11.5px;color:var(--ink-dim);}
+footer code{background:var(--surface-2);padding:1px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="eyebrow">个人知识仓库 · GitHub Pages</div>
+  <h1>知识卡片盒</h1>
+  <p class="dek">平时收集的技术小知识、故障排查方法都放这里——纯静态网站，数据是仓库里的Markdown文件，谁都能看源码、谁都能帮你改。</p>
+
+  <div class="toolbar">
+    <input class="search" id="search" type="text" placeholder="搜索标题 / 标签 / 内容...">
+  </div>
+
+  <div class="chips" id="chips">
+    <span class="chip active" data-cat="全部">全部</span>
+    {% assign cats = site.cards | map: "category" | uniq | sort %}
+    {% for c in cats %}<span class="chip" data-cat="{{ c }}">{{ c }}</span>{% endfor %}
+  </div>
+
+  <div class="grid" id="grid">
+    {% assign sorted = site.cards | sort: "date" | reverse %}
+    {% if sorted.size == 0 %}
+    <div class="empty">还没有卡片，在 <code>_cards/</code> 文件夹里新建一个 .md 文件试试。</div>
+    {% endif %}
+    {% for card in sorted %}
+    <div class="card" data-cat="{{ card.category }}">
+      <div class="card-top">
+        <span class="pill">{{ card.category }}</span>
+        <span class="card-date">{{ card.date | date: "%Y-%m-%d" }}</span>
+      </div>
+      <p class="card-title" data-role="toggle">{{ card.title }}</p>
+      <div class="tag-row">{% for t in card.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+      <p class="summary">{{ card.summary }}</p>
+      <div class="content-wrap" data-role="content-wrap">
+        <div class="content">{{ card.content }}</div>
+      </div>
+      <div class="card-footer">
+        <button class="expand-btn" data-role="toggle">展开全部内容 ↓</button>
+        {% if card.link %}<a class="card-link" href="{{ card.link }}" target="_blank" rel="noopener">{{ card.linkLabel | default: "查看更多 ↗" }}</a>{% else %}<span></span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <footer>知识卡片盒 · 纯静态站点，无需登录任何账号即可查看 · 新增条目：在 <code>_cards/</code> 文件夹里新建一个 .md 文件（格式见 README.md）</footer>
+</div>
+
+<script>
+(function(){
+  var search = document.getElementById("search");
+  var chips = document.querySelectorAll("#chips .chip");
+  var cards = document.querySelectorAll("#grid .card");
+  var activeCat = "全部";
+
+  function apply(){
+    var q = search.value.trim().toLowerCase();
+    cards.forEach(function(c){
+      var okCat = activeCat === "全部" || c.dataset.cat === activeCat;
+      var okQ = !q || c.textContent.toLowerCase().indexOf(q) !== -1;
+      c.classList.toggle("hidden-card", !(okCat && okQ));
+    });
+  }
+  if (search) search.addEventListener("input", apply);
+  chips.forEach(function(chip){
+    chip.addEventListener("click", function(){
+      activeCat = chip.dataset.cat;
+      chips.forEach(function(c){ c.classList.toggle("active", c === chip); });
+      apply();
+    });
+  });
+  document.querySelectorAll('[data-role="toggle"]').forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var card = btn.closest(".card");
+      var wrap = card.querySelector('[data-role="content-wrap"]');
+      var expandBtn = card.querySelector(".expand-btn");
+      var open = wrap.classList.toggle("open");
+      expandBtn.textContent = open ? "收起 ↑" : "展开全部内容 ↓";
+    });
+  });
+})();
+</script>
+</body>
+</html>
